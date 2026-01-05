@@ -263,23 +263,27 @@
         monitorQuantityChanges(colors);
     }
     
-    // Render color options as radio or checkbox
-    function renderColorOptions(type, colors) {
+    // Render color options as radio or checkbox, optionally marking preselected values
+    function renderColorOptions(type, colors, preselected) {
+        preselected = preselected || [];
+        const preNormalized = preselected.map(p => (p || '').toString().trim().toLowerCase());
         const $colorOptions = $('#color-options');
         $colorOptions.empty();
-        
+    
         colors.forEach((color) => {
-            const inputId = `color-${color.toLowerCase()}`;
+            const safeId = color.toString().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+            const inputId = `color-${safeId}`;
             const inputType = type === 'radio' ? 'radio' : 'checkbox';
             const groupName = type === 'radio' ? 'productColor' : 'productColors';
-            
+            const isChecked = preNormalized.includes(color.toString().trim().toLowerCase());
+            const checkedAttr = isChecked ? 'checked' : '';
             const $colorLabel = $(`
                 <label style="display: inline-block; margin-right: 20px; margin-bottom: 10px; cursor: pointer;">
-                    <input type="${inputType}" name="${groupName}" value="${color}" id="${inputId}" data-color="${color}">
+                    <input type="${inputType}" name="${groupName}" value="${color}" id="${inputId}" data-color="${color}" ${checkedAttr}>
                     <span style="margin-left: 8px;">${color}</span>
                 </label>
             `);
-            
+        
             $colorOptions.append($colorLabel);
         });
     }
@@ -294,11 +298,15 @@
                 
                 // Toggle between radio and checkbox based on quantity
                 if (lastQuantity === 1 && currentQuantity > 1) {
-                    // Convert from radio to checkbox
-                    renderColorOptions('checkbox', colors);
+                    // Convert from radio to checkbox, preserve previously selected radio if any
+                    const selected = $('#color-options input[name="productColor"]:checked').map(function() { return this.value; }).get();
+                    const pre = (selected && selected.length) ? selected : (colors && colors.length ? [colors[0]] : []);
+                    renderColorOptions('checkbox', colors, pre);
                 } else if (lastQuantity > 1 && currentQuantity === 1) {
-                    // Convert from checkbox to radio
-                    renderColorOptions('radio', colors);
+                    // Convert from checkbox to radio, pick first checked checkbox if any
+                    const checked = $('#color-options input[name="productColors"]:checked').map(function() { return this.value; }).get();
+                    const pick = (checked && checked.length) ? [checked[0]] : (colors && colors.length ? [colors[0]] : []);
+                    renderColorOptions('radio', colors, pick);
                 }
                 
                 lastQuantity = currentQuantity;

@@ -188,13 +188,60 @@ const CART_KEY = 'babyclouser_cart';
 
       // gather product data from dataset or fall back to DOM
       const ctx = a.closest('.product-item') || a.closest('.product-detail') || a.closest('.product-image') || document;
-      const name = dataset.name || (ctx.querySelector('.title a') ? ctx.querySelector('.title a').textContent.trim() : (ctx.querySelector('.title') ? ctx.querySelector('.title').textContent.trim() : 'Product'));
+      let name = dataset.name || (ctx.querySelector('.title a') ? ctx.querySelector('.title a').textContent.trim() : (ctx.querySelector('.title') ? ctx.querySelector('.title').textContent.trim() : 'Product'));
       const priceText = dataset.price || (ctx.querySelector('.price') ? ctx.querySelector('.price').textContent : '0');
       const priceMatch = String(priceText).match(/[\d,]+/);
       const price = Number((priceMatch && priceMatch[0].replace(/,/g, '')) || dataset.price || 0);
       const image = dataset.image || (ctx.querySelector('img') ? ctx.querySelector('img').getAttribute('src') : '');
 
       const id = dataset.id || dataset.productId || ('p_' + Date.now());
+
+      // Color handling: look for selected color inputs first
+      let selectedColors = [];
+      try {
+        const checked = ctx.querySelectorAll('input[name="productColor"]:checked, input[name="productColors"]:checked');
+        if (checked && checked.length) {
+          selectedColors = Array.from(checked).map(i => (i.value || i.dataset.color || '').toString().trim()).filter(Boolean);
+        } else {
+          // if no user selection, try to find rendered color options (e.g., from product-detail page)
+          const colorInputs = ctx.querySelectorAll('#color-options input, .color-selection input');
+          if (colorInputs && colorInputs.length) {
+            // default to first available color
+            const first = colorInputs[0];
+            const v = (first.value || first.dataset.color || '').toString().trim();
+            if (v) selectedColors = [v];
+          } else {
+            // fallback: try to parse data-colors attribute on the product item
+            const colorsAttr = (ctx.dataset && ctx.dataset.colors) || (a.closest('.product-item') && a.closest('.product-item').dataset && a.closest('.product-item').dataset.colors) || '';
+            if (colorsAttr) {
+              const ca = colorsAttr.toString().trim();
+              if (ca.toLowerCase() === 'yes') {
+                // generic 'yes' — fall back to a sensible default first color
+                selectedColors = ['Red'];
+              } else {
+                let parsed = [];
+                try {
+                  parsed = ca.split(',').map(c => c.trim().replace(/^['\"]|['\"]$/g, '')).filter(Boolean);
+                } catch (err) {
+                  parsed = [];
+                }
+                if (parsed.length) selectedColors = [parsed[0]];
+              }
+            }
+          }
+        }
+      } catch (err) {
+        selectedColors = [];
+      }
+
+      // Append colors to product name (e.g., "Product Name (White)" or multiple "(White, Pink)")
+      if (selectedColors && selectedColors.length) {
+        // normalize spacing and join
+        const unique = Array.from(new Set(selectedColors.map(c => c.trim()))).filter(Boolean);
+        if (unique.length) {
+          name = `${name} (${unique.join(', ')})`;
+        }
+      }
 
       addToCart({ id, name, price, image, quantity });
       return;
