@@ -2,13 +2,13 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>E Shop - Bootstrap Ecommerce Template</title>
+        <title>Baby Clouser</title>
         <meta content="width=device-width, initial-scale=1.0" name="viewport">
         <meta content="Bootstrap Ecommerce Template" name="keywords">
         <meta content="Bootstrap Ecommerce Template Free Download" name="description">
 
         <!-- Favicon -->
-        <link href="img/favicon.ico" rel="icon">
+        <link href="img/favicon/favicon_BC_1.webp" rel="icon">
 
         <!-- Google Fonts -->
         <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&display=swap" rel="stylesheet">
@@ -21,6 +21,7 @@
 
         <!-- Template Stylesheet -->
         <link href="css/style.css" rel="stylesheet">
+        <link href="css/cart.css" rel="stylesheet">
     </head>
 
     <body>
@@ -30,29 +31,19 @@
                 <div class="row align-items-center">
                     <div class="col-md-3">
                         <div class="logo">
-                            <a href="">
-                                <img src="img/logo.png" alt="Logo">
+                            <a href="index.html">
+                                <img src="./img/logo/baby-clouser-logo.webp" alt="Logo">
                             </a>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="search">
-                            <input type="text" placeholder="Search">
-                            <button><i class="fa fa-search"></i></button>
-                        </div>
-                    </div>
+                    <div class="col-md-6"></div>
                     <div class="col-md-3">
                         <div class="user">
-                            <div class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">My Account</a>
-                                <div class="dropdown-menu">
-                                    <a href="#" class="dropdown-item">Login</a>
-                                    <a href="#" class="dropdown-item">Register</a>
-                                </div>
-                            </div>
                             <div class="cart">
-                                <i class="fa fa-cart-plus"></i>
-                                <span>(0)</span>
+                                <a href="#" class="cart-icon">
+                                    <i class="fa fa-cart-plus"></i>
+                                    <span class="cart-count">0</span>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -75,18 +66,6 @@
                         <div class="navbar-nav m-auto">
                             <a href="index.html" class="nav-item nav-link active">Home</a>
                             <a href="product-list.html" class="nav-item nav-link">Products</a>
-                            <div class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Pages</a>
-                                <div class="dropdown-menu">
-                                    <a href="product-list.html" class="dropdown-item">Product</a>
-                                    <a href="product-detail.html" class="dropdown-item">Product Detail</a>
-                                    <a href="cart.html" class="dropdown-item">Cart</a>
-                                    <a href="wishlist.html" class="dropdown-item">Wishlist</a>
-                                    <a href="checkout.html" class="dropdown-item">Checkout</a>
-                                    <a href="login.html" class="dropdown-item">Login & Register</a>
-                                    <a href="my-account.html" class="dropdown-item">My Account</a>
-                                </div>
-                            </div>
                             <a href="contact.html" class="nav-item nav-link">Contact Us</a>
                         </div>
                     </div>
@@ -114,22 +93,22 @@
                 <div class="row align-items-center">
                     <div class="col-md-7">
                         <div class="form">
-                            <form action="" method="">
+                            <form id="contactForm" method="post">
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
-                                        <input type="text" class="form-control" placeholder="Your Name" />
+                                        <input type="text" name="name" class="form-control" placeholder="Your Name" required />
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <input type="email" class="form-control" placeholder="Your Email" />
+                                        <input type="email" name="email" class="form-control" placeholder="Your Email" required />
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <input type="text" class="form-control" placeholder="Subject" />
+                                    <input type="text" name="subject" class="form-control" placeholder="Subject" required />
                                 </div>
                                 <div class="form-group">
-                                    <textarea class="form-control" rows="5" placeholder="Message"></textarea>
+                                    <textarea name="message" class="form-control" rows="5" placeholder="Message" required></textarea>
                                 </div>
-                                <div><button type="submit">Send Message</button></div>
+                                <div><button type="submit" id="submitBtn">Send Message</button></div>
                             </form>
                         </div>
                     </div>
@@ -158,6 +137,25 @@
         </div>
         <!-- Contact End -->
         
+
+        <!-- Cart Sidebar Include -->
+        <div>
+            <div class="cart-sidebar-overlay"></div>
+            <aside class="cart-sidebar" aria-hidden="true">
+              <button class="cart-sidebar-close close">Close</button>
+              <h3>Your Cart</h3>
+              <div class="cart-sidebar-items"></div>
+              <div class="cart-sidebar-summary">
+                <p>Subtotal: <span class="cart-sidebar-subtotal">₹0</span></p>
+                <p>Delivery: <span class="cart-sidebar-delivery">₹0</span></p>
+                <h4>Grand Total: <span class="cart-sidebar-grand">₹0</span></h4>
+                <div style="margin-top:12px;">
+                  <a href="cart.html" class="btn btn-sm btn-primary">View Cart</a>
+                  <a href="checkout.html" class="btn btn-sm btn-success">Proceed to Checkout</a>
+                </div>
+              </div>
+            </aside>
+        </div>
         
         <!-- Footer Start -->
         <div class="footer">
@@ -269,6 +267,9 @@
 
         
         <!-- Template Javascript -->
+        <script src="js/cart.js"></script>
+        <script src="js/checkout.js"></script>
         <script src="js/main.js"></script>
+        <script src="js/contact.js"></script>
     </body>
 </html>
