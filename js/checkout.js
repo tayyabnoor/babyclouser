@@ -4,7 +4,7 @@
 
   function qs(id) { return document.getElementById(id); }
 
-  function formatCurrency(v) { return '₹' + (Number(v) || 0).toLocaleString('en-IN'); }
+  function formatCurrency(v) { return '₨' + (Number(v) || 0).toLocaleString('en-IN'); }
 
   function buildOrderSummary() {
     const container = document.getElementById('checkout-order-summary');
@@ -45,11 +45,47 @@
     return `mailto:${recipients.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
+  function redirectToThankYou(status, params) {
+    try {
+      const qs = new URLSearchParams({ status: status, ...(params || {}) });
+      window.location.href = `thankyou.html?${qs.toString()}`;
+    } catch (e) {
+      window.location.href = `thankyou.html?status=${encodeURIComponent(status)}`;
+    }
+  }
+
+  function setPlacingOrderState(btn, placing) {
+    if (!btn) return;
+    try {
+      if (placing) {
+        if (!btn.dataset.originalText) btn.dataset.originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Placing order...';
+      } else {
+        btn.disabled = false;
+        btn.textContent = btn.dataset.originalText || 'Place Order';
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
   function placeOrder() {
+    const btn = document.getElementById('place-order-btn');
+
     const v = validateForm();
-    if (!v.ok) { alert(v.message); return; }
+    if (!v.ok) {
+      redirectToThankYou('order_failed', { error: v.message || 'Please fill all required fields' });
+      return;
+    }
     const cart = BabyCart.getCart();
-    if (!cart.length) { alert('Cart is empty'); return; }
+    if (!cart.length) {
+      redirectToThankYou('order_failed', { error: 'Cart is empty' });
+      return;
+    }
+
+    setPlacingOrderState(btn, true);
+
     const subtotal = BabyCart.getCartTotal();
     const delivery = BabyCart.calculateDelivery(subtotal);
     const grand = subtotal + delivery;
@@ -82,44 +118,45 @@
     }
 
     // Try to send order to backend API
-    const apiUrl = window.location.origin + '/api/orders.php';
+    const apiUrl = 'process_checkout.php';
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      setPlacingOrderState(btn, false);
+      redirectToThankYou('order_failed', { error: 'Order request timed out. Please try again or place order on WhatsApp.' });
+    }, 25000); // 25 seconds timeout
+
     fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(order),
-      timeout: 5000
+      body: JSON.stringify(order)
     })
     .then(r => {
+      clearTimeout(timeoutId);
+      if (timedOut) return; // already handled by timeout
       if (!r.ok) throw new Error('Server response: ' + r.status);
       return r.json();
     })
     .then(data => {
-      if (data.ok && data.orderId) {
+      clearTimeout(timeoutId);
+      if (timedOut) return; // already handled by timeout
+      if (data.success && data.orderId) {
         orderId = data.orderId;
+        // Success: clear cart and redirect to thank you page
+        BabyCart.clearCart();
+        redirectToThankYou('order_success', { order: orderId });
+      } else {
+        throw new Error(data.message || 'Order processing failed');
       }
-      // Show success either way
-      showOrderSuccess(orderId, v.data, grand);
     })
     .catch(e => {
-      console.warn('Backend API unavailable, using local order:', e.message);
-      // Show success with local order ID (backend not required)
-      showOrderSuccess(orderId, v.data, grand);
+      clearTimeout(timeoutId);
+      if (timedOut) return; // already handled by timeout
+      console.error('Order submission error:', e.message);
+      // Failure: keep cart so user can try again
+      setPlacingOrderState(btn, false);
+      redirectToThankYou('order_failed', { error: e.message || 'Order not placed' });
     });
-  }
-
-  function showOrderSuccess(orderId, customer, grand) {
-    const message = 'Thank You! Your order has been placed successfully.\n\n' +
-      'Order ID: ' + orderId + '\n\n' +
-      'Order Details:\n' +
-      'Name: ' + customer.name + '\n' +
-      'Email: ' + customer.email + '\n' +
-      'Phone: ' + customer.phone + '\n' +
-      'Grand Total: ₹' + grand.toLocaleString('en-IN') + '\n\n' +
-      'We will contact you soon with confirmation.';
-    
-    alert(message);
-    BabyCart.clearCart();
-    setTimeout(() => { window.location.href = 'index.html'; }, 1500);
   }
 
   document.addEventListener('DOMContentLoaded', function () {

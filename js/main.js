@@ -32,6 +32,50 @@
         {
             name: 'Luxury Imported Teddy Bear (6ft)',
             images: ['img/products/luxury-6ft-tedy/red.webp','img/products/luxury-6ft-tedy/white.jpg','img/products/luxury-6ft-tedy/brown.jpg','img/products/luxury-6ft-tedy/pink.jpg']
+        },
+        {
+            name: 'Lavender Roses',
+            images: ['img/products/Crochet_flower_bouquet/chrochet_flower_main.jpg','img/products/Crochet_flower_bouquet/chrochet_flower_2.jpg','img/products/Crochet_flower_bouquet/chrochet_flower_3.jpg','img/products/Crochet_flower_bouquet/chrochet_flower_4.jpg']
+        },
+        {
+            name: 'Pink Peony Posy',
+            images: ['img/products/pink_peony_posy/pink_peony_main.jpg','img/products/pink_peony_posy/pink_peony_2.jpg','img/products/pink_peony_posy/pink_peony_3.jpg']
+        },
+        {
+            name: 'Persian Buttercup',
+            images: ['img/products/persion_bc/persian_bc_main.jpg','img/products/persion_bc/persian_bc_2.jpg']
+        },
+        {
+            name: 'Sweet Sparkle',
+            images: ['img/products/sweet_sparkle/sweet_sparkle_main.jpg','img/products/sweet_sparkle/sweet_sparkle_2.jpg','img/products/sweet_sparkle/sweet_sparkle_3.jpg']
+        },
+        {
+            name: 'Ivory-colored roses',
+            images: ['img/products/Ivory-colored roses/ivory_roses_main.jpg','img/products/Ivory-colored roses/ivory_roses_2.jpg','img/products/Ivory-colored roses/ivory_roses_1.jpg']
+        },
+        {
+            name: 'Blue Glitter Roses',
+            images: ['img/products/blue glitter roses/blue-glitter-roses-2.jpg','img/products/blue glitter roses/blue-glitter-roses-main.jpg']
+        },
+        {
+            name: 'Camellias',
+            images: ['img/products/Camellias/Camellias_1.jpg','img/products/Camellias/Camellias-main.jpg']
+        },
+        {
+            name: 'White Dahlia Flowers',
+            images: ['img/products/dahlia/dhalia_1.jpg','img/products/dahlia/dhalia_main.jpg']
+        },
+        {
+            name: 'Pots of Plants',
+            images: ['img/products/Pot of Plants/eucalapsus_plant.jpg','img/products/Pot of Plants/faux greenery.jpg','img/products/Pot of Plants/green_grass.jpg','img/products/Pot of Plants/green_roses_plant.jpg','img/products/Pot of Plants/orange_roses_plant.jpg','img/products/Pot of Plants/red_roses_plant.jpg','img/products/Pot of Plants/orange_tigger_lilly.jpg','img/products/Pot of Plants/pink_tigger_lilly.jpg','img/products/Pot of Plants/yellow_tiger_lilly.jpg']
+        },
+        {
+            name: 'Single Flower Bouquet',
+            images: ['img/products/single-rose-bouquet/srb_1.jpg','img/products/single-rose-bouquet/srb_2.jpg','img/products/single-rose-bouquet/srb_3.jpg']
+        },
+        {
+            name: 'Valentine Deal',
+            images: ['img/products/deal-2026/deal-2026-02.jpg','img/products/deal-2026/deal-2026-03.jpg','img/products/deal-2026/deal-2026-04.jpg']
         }
         // ...
     ];
@@ -86,6 +130,7 @@
             }
         }
         const mulImg = ($productItem.attr('mul-img') || '').toString().toLowerCase() === 'yes';
+        const category = ($productItem.data('category') || '').toString().trim();
 
         // Prefer a data-description attribute if present, otherwise create a simple one using the title
         const description = ($productItem.data('description') || $productItem.find('.product-content .description').text() || '').toString().trim() || (`High quality product: ${title}`);
@@ -115,6 +160,7 @@
             hasColors: hasColors,
             colors: colors,
             mulImg: mulImg,
+            category: category,
             description: description,
             specs: specs
         };
@@ -130,6 +176,74 @@
         setTimeout(() => {
             window.location.href = href;
         }, 10);
+    });
+
+    // WhatsApp order handler
+    const WHATSAPP_PHONE = '923015755700';
+
+    function extractCurrentPriceFromPriceEl($priceEl) {
+        try {
+            if (!$priceEl || !$priceEl.length) return '';
+            const $clone = $priceEl.clone();
+            $clone.find('span').remove();
+            return ($clone.text() || '').trim();
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function openWhatsAppOrder(productName, priceText, colors) {
+        const cleanName = (productName || '').toString().trim();
+        const cleanPrice = (priceText || '').toString().trim();
+        const colorList = Array.isArray(colors) ? colors.map(c => (c || '').toString().trim()).filter(Boolean) : [];
+
+        let msg = 'Assalam-o-Alaikum! I want to order:';
+        if (cleanName) msg += `\nProduct: ${cleanName}`;
+        if (cleanPrice) msg += `\nPrice: ${cleanPrice}`;
+        if (colorList.length) msg += `\nColor: ${colorList.join(', ')}`;
+
+        const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+    }
+
+    $(document).on('click', '.order-whatsapp', function (e) {
+        e.preventDefault();
+
+        const $btn = $(this);
+        const $productItem = $btn.closest('.product-item');
+        const onDetailPage = $btn.closest('.product-detail').length > 0;
+
+        // Prefer product data stored for detail page
+        if (onDetailPage) {
+            let productData = null;
+            try {
+                productData = JSON.parse(localStorage.getItem('selectedProduct'));
+            } catch (err) {
+                productData = null;
+            }
+
+            const title = (productData && productData.title) ? productData.title : ($('.product-detail .product-detail-top .product-content .title h2').text() || '').trim();
+            const price = (productData && productData.priceCurrent) ? productData.priceCurrent : extractCurrentPriceFromPriceEl($('.product-detail .product-detail-top .product-content .price').first());
+
+            // If colors UI exists, collect selected values (radio or checkbox)
+            const selectedColors = $('#color-options input:checked').map(function () { return this.value; }).get();
+            openWhatsAppOrder(title, price, selectedColors);
+            return;
+        }
+
+        // Product list / other cards
+        let title = '';
+        let price = '';
+        if ($productItem.length) {
+            title = $productItem.find('.product-content .title a, .product-content .title').first().text().trim();
+            price = extractCurrentPriceFromPriceEl($productItem.find('.product-content .price').first());
+        }
+
+        // As a fallback, try data attributes (if present)
+        if (!title) title = ($btn.data('name') || '').toString().trim();
+        if (!price) price = ($btn.data('price') || '').toString().trim();
+
+        openWhatsAppOrder(title, price, []);
     });
     
     // Load and display product details on product-detail page
@@ -181,11 +295,11 @@
             // Update product image(s)
             // If mulImg is set, look up the images array by product name in `products_images`.
             let slidesHtml = '';
-            if (productData.mulImg) {
-                const match = products_images.find(p => p.name === productData.title);
-                if (match && Array.isArray(match.images) && match.images.length) {
-                    slidesHtml = match.images.map(src => `<div><img src="${src}" alt="Product Image"></div>`).join('');
-                }
+            const normalizeProductName = (v) => (v || '').toString().replace(/\s+/g, ' ').trim().toLowerCase();
+            const wantedName = normalizeProductName(productData.title);
+            const match = products_images.find(p => normalizeProductName(p && p.name) === wantedName);
+            if ((productData.mulImg || match) && match && Array.isArray(match.images) && match.images.length) {
+                slidesHtml = match.images.map(src => `<div><img src="${src}" alt="Product Image"></div>`).join('');
             }
 
             // Fallback to single image if no multi images found
@@ -232,6 +346,7 @@
                     $addBtn.attr('data-name', productData.title || $addBtn.attr('data-name') || 'Product');
                     $addBtn.attr('data-price', numericPrice || $addBtn.attr('data-price') || 0);
                     $addBtn.attr('data-image', productData.image || $addBtn.attr('data-image') || '');
+                    $addBtn.attr('data-category', productData.category || $addBtn.attr('data-category') || '');
                 }
             } catch (e) {
                 // silent
@@ -251,7 +366,7 @@
             colors = ['Red', 'Blue', 'Pink', 'Yellow', 'Brown', 'White', 'Peach'];
         }
         
-        const colorContainer = $('<div class="color-selection" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;"><h4>Select Color:</h4><div id="color-options"></div></div>');
+        const colorContainer = $('<div class="color-selection" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;"><h4>Choose Many:</h4><div id="color-options"></div></div>');
         
         // Insert color selection after quantity selector
         $('.quantity').after(colorContainer);
@@ -551,7 +666,7 @@
 
     // Product List Pagination & Category Filter
     $(document).ready(function () {
-        const productsPerPage = 9;
+        const productsPerPage = 12;
         let currentCategory = "all";
         let currentPage = 1;
 
@@ -567,7 +682,7 @@
         }
 
         function getFilteredProducts() {
-            let $allProducts = $('#products-container .col-lg-4');
+            let $allProducts = $('#products-container > div');
             return $allProducts.filter(function () {
                 let $item = $(this).find('.product-item');
                 let categories = ($item.data('category') || '').toString().toLowerCase().split(' ');
@@ -576,7 +691,7 @@
         }
 
         function showPage(page) {
-            let $allProducts = $('#products-container .col-lg-4');
+            let $allProducts = $('#products-container > div');
             let $filtered = getFilteredProducts();
             let totalPages = Math.ceil($filtered.length / productsPerPage);
 
@@ -606,13 +721,16 @@
             $('#next-page').toggleClass('disabled', currentPage === totalPages || totalPages === 0);
         }
 
-        // Category click
-        $('#product-category ul li a').on('click', function (e) {
+        // Category dropdown click
+        $(document).on('click', '#category-dropdown .dropdown-item', function (e) {
             e.preventDefault();
-            $('#product-category ul li').removeClass('active');
-            $(this).parent().addClass('active');
-            currentCategory = getCategoryFromText($(this).text());
+            const selectedText = ($(this).text() || '').toString();
+            currentCategory = getCategoryFromText(selectedText);
             currentPage = 1;
+
+            // Update dropdown label
+            $('#category-dropdown .dropdown-toggle').text(selectedText);
+
             showPage(currentPage);
         });
 
@@ -639,8 +757,9 @@
             }
         });
 
-        // Set "All" as active by default and show first page
-        $('#product-category ul li:first').addClass('active');
+        // Default category is "All"
+        $('#category-dropdown .dropdown-toggle').text('All');
+        currentCategory = 'all';
         showPage(1);
     });
 

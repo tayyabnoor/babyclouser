@@ -47,7 +47,8 @@ const CART_KEY = 'babyclouser_cart';
         name: product.name,
         price: Number(product.price) || 0,
         quantity: Number(product.quantity) || 1,
-        image: product.image || ''
+        image: product.image || '',
+        category: product.category || ''
       });
     }
     writeCart(cart);
@@ -78,7 +79,17 @@ const CART_KEY = 'babyclouser_cart';
     return readCart().reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0);
   }
 
+  function cartHasDeal(cart) {
+    try {
+      return (cart || []).some(i => (i && i.category ? String(i.category) : '').toLowerCase().split(/\s+/).includes('deal'));
+    } catch (e) {
+      return false;
+    }
+  }
+
   function calculateDelivery(total) {
+    const cart = readCart();
+    if (cartHasDeal(cart)) return 0;
     return total < 3000 ? 270 : 0;
   }
 
@@ -96,7 +107,7 @@ const CART_KEY = 'babyclouser_cart';
     els.forEach(el => { el.textContent = getCartCount(); });
   }
 
-  function formatCurrency(v) { return '₹' + (Number(v) || 0).toLocaleString('en-IN'); }
+  function formatCurrency(v) { return '₨' + (Number(v) || 0).toLocaleString('en-IN'); }
 
   function renderCartSidebar() {
     const container = document.querySelector('.cart-sidebar-items');
@@ -139,7 +150,7 @@ const CART_KEY = 'babyclouser_cart';
     table.innerHTML = '';
     if (!cart.length) {
       table.innerHTML = '<tr><td colspan="6" class="text-center">Your cart is empty</td></tr>';
-      document.querySelectorAll('.cart-summary .cart-content p span, .cart-summary .cart-content h4 span').forEach(el => el.textContent = '₹0');
+      document.querySelectorAll('.cart-summary .cart-content p span, .cart-summary .cart-content h4 span').forEach(el => el.textContent = '₨0');
       return;
     }
     cart.forEach(item => {
@@ -194,6 +205,9 @@ const CART_KEY = 'babyclouser_cart';
       const price = Number((priceMatch && priceMatch[0].replace(/,/g, '')) || dataset.price || 0);
       const image = dataset.image || (ctx.querySelector('img') ? ctx.querySelector('img').getAttribute('src') : '');
 
+      // capture category (used for delivery rule e.g. "deal")
+      const category = dataset.category || (ctx.dataset && ctx.dataset.category) || (a.closest('.product-item') && a.closest('.product-item').dataset && a.closest('.product-item').dataset.category) || '';
+
       const id = dataset.id || dataset.productId || ('p_' + Date.now());
 
       // Color handling: look for selected color inputs first
@@ -243,7 +257,7 @@ const CART_KEY = 'babyclouser_cart';
         }
       }
 
-      addToCart({ id, name, price, image, quantity });
+      addToCart({ id, name, price, image, quantity, category });
       return;
     }
 
